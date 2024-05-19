@@ -3,8 +3,10 @@ import os
 import pylnk3
 import string
 
-# Function to find a file in the given drives
 def find_file(name, drives):
+  """
+  Function to find a file in the given drives
+  """
   # Iterate over each drive
   for drive in drives:
     # Use os.walk to iterate over each directory in the drive
@@ -15,8 +17,10 @@ def find_file(name, drives):
   # If the file is not found, return None
   return None
 
-# Function to fix broken shortcuts
 def fix_shortcuts():
+  """
+  Function to fix broken shortcuts
+  """
   # Get the path to the user's home directory
   home_dir = os.path.expanduser("~")
   # Generate a list of all existing drives, excluding the C drive
