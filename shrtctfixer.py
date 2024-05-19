@@ -4,9 +4,16 @@ import pylnk3
 import string
 import logging
 
-def find_file(name, drives):
+def find_file(name: str, drives: list) -> str:
   """
-  Function to find a file in the given drives
+  Function to find a file in the given drives.
+  
+  Parameters:
+  name (str): The name of the file to find.
+  drives (list): A list of drive paths to search in.
+
+  Returns:
+  str: The full path to the file if found, None otherwise.
   """
   # Iterate over each drive
   for drive in drives:
@@ -18,9 +25,15 @@ def find_file(name, drives):
   # If the file is not found, return None
   return None
 
-def get_shortcuts_in_directory(directory):
+def get_shortcuts_in_directory(directory: str) -> list:
   """
-  Function to get all shortcuts in a directory
+  Function to get all shortcuts in a directory.
+  
+  Parameters:
+  directory (str): The directory to search in.
+
+  Returns:
+  list: A list of full paths to the shortcuts found.
   """
   # List to store the shortcuts
   shortcuts = []
@@ -37,9 +50,20 @@ def get_shortcuts_in_directory(directory):
   # Return the list of shortcuts
   return shortcuts
 
-def fix_shortcut(lnk_path, drives):
+def fix_shortcut(lnk_path: str, drives: list) -> None:
   """
-  Function to fix a single shortcut
+  Function to fix a single shortcut.
+  
+  Parameters:
+  lnk_path (str): The full path to the shortcut.
+  drives (list): A list of drive paths to search in for the target file.
+
+  Returns:
+  None
+
+  Side effects:
+  Modifies the shortcut file at lnk_path if the target file is found in the drives.
+  Logs any changes made or errors encountered to a log file.
   """
   try:
     # Create a shortcut object
@@ -62,9 +86,20 @@ def fix_shortcut(lnk_path, drives):
       # Save the changes to the shortcut
       lnk.save(lnk_path)
 
-def fix_shortcuts():
+def fix_shortcuts() -> None:
   """
-  Function to fix broken shortcuts
+  Function to fix broken shortcuts in the user's home directory.
+  
+  Parameters:
+  None
+
+  Returns:
+  None
+
+  Side effects:
+  Asks the user for input.
+  Modifies shortcut files in the user's home directory.
+  Logs any changes made or errors encountered to a log file.
   """
   # Get the path to the user's home directory
   home_dir = os.path.expanduser("~")
