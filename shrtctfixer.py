@@ -68,8 +68,15 @@ def fix_shortcuts():
   """
   # Get the path to the user's home directory
   home_dir = os.path.expanduser("~")
-  # Generate a list of all existing drives, excluding the C drive
-  drives = [f"{d}:\\" for d in string.ascii_uppercase if os.path.exists(f"{d}:\\") and d != 'C']
+
+  # Generate a list of all existing drives
+  all_drives = [f"{d}:\\" for d in string.ascii_uppercase if os.path.exists(f"{d}:\\")]
+
+  # Ask the user which drives to exclude
+  exclude_drives = input("Enter the drives to exclude, separated by commas (e.g., 'C,D'): ").upper().split(',')
+
+  # Generate a list of drives to include, excluding the specified drives
+  drives = [drive for drive in all_drives if drive[0] not in exclude_drives]
 
   # Configure logging
   logging.basicConfig(filename='changes.log', level=logging.INFO, format='%(asctime)s - %(message)s')
