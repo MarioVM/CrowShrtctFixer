@@ -1,11 +1,12 @@
 # Broken Shortcut Fixer
 
-This Python script is designed to fix broken shortcuts in a Windows environment. It searches for the target files in all drives except the specified excluded drives and updates the shortcuts with the new locations of the target files. It also logs the changes to a `changes.log` file in the root directory of the application.
+ShrtctFixer is a Python script that fixes broken shortcuts in the user's home directory. It searches for the target files of the shortcuts in all drives except those specified by the user, and updates the shortcuts if the target files are found. It also logs the changes to a `changes.log` file in the root directory of the application.
 
 ## 📋 Requirements
 
 - Python 3
 - `pylnk3` library
+- `tqdm` library
 
 ## 🛠️ Installation
 
@@ -14,11 +15,12 @@ This Python script is designed to fix broken shortcuts in a Windows environment.
 
     ```shell
     pip install pylnk3
+    pip install tqdm
     ```
 
 ## 🚀 Usage
 
-Run the script in your terminal:
+Run the script in a Python environment. When prompted, enter the drives to exclude from the search, separated by commas (e.g., 'C,D').
 
 ```shell
 python shrtctfixer.py
@@ -33,6 +35,21 @@ Checking and fixing shortcuts...
 Changed C:\Users\User\Desktop\Example.lnk from E:\OldPath\Example.exe to F:\NewPath\Example.exe
 ...
 Process completed. Check changes.log for details.
+
+Functions
+find_file(name: str, drives: list) -> str: Finds a file in the given drives using parallel search with caching.
+get_shortcuts_in_directory(directory: str) -> list: Gets all shortcuts in a directory.
+fix_shortcut(lnk_path: str, drives: list, progress_bar) -> None: Fixes a single shortcut.
+fix_shortcuts() -> None: Fixes broken shortcuts in the user's home directory.
+
+Logging
+The script logs any changes made or errors encountered to a file named 'changes.log'.
+
+Performance
+The script uses Python's concurrent.futures module to search for files and fix shortcuts in parallel, which can significantly speed up the process if there are many shortcuts or drives to search in. The total time taken is printed at the end.
+
+Limitations
+The script can only fix shortcuts that point to files, not directories. It also does not handle shortcuts with relative paths.
 
 This `README.md` provides clear instructions on requirements, installation, usage, and an example of how to run the script, as well as licensing information.
 

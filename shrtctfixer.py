@@ -92,21 +92,32 @@ def fix_shortcut(lnk_path: str, drives: list, progress_bar) -> None:
     except Exception as e:
         # Log the error and return
         logging.error(f"Error creating shortcut object for {lnk_path}: {str(e)}")
+        tqdm.write(f"Error creating shortcut object for {lnk_path}: {str(e)}")
         progress_bar.update(1)
         return
+
+    tqdm.write(f"Processing shortcut: {lnk_path}")
+
     # If the target file of the shortcut does not exist
     if not os.path.exists(lnk.relative_path):
+        tqdm.write(f"Target file not found for shortcut: {lnk.relative_path}")
         # Find the target file in the drives
         new_path = find_file(os.path.basename(lnk.relative_path), drives)
         # If the target file is found
         if new_path:
             # Log the change
             logging.info(f"Changed {lnk_path} from {lnk.relative_path} to {new_path}")
+            tqdm.write(f"Changed {lnk_path} from {lnk.relative_path} to {new_path}")
             # Update the target path and working directory of the shortcut
             lnk.relative_path = new_path
             lnk.working_dir = os.path.dirname(new_path)
             # Save the changes to the shortcut
             lnk.save(lnk_path)
+        else:
+            tqdm.write(f"Target file not found in any drives for shortcut: {lnk.relative_path}")
+    else:
+        tqdm.write(f"Target file exists for shortcut: {lnk.relative_path}")
+
     progress_bar.update(1)
 
 def fix_shortcuts() -> None:
@@ -141,6 +152,8 @@ def fix_shortcuts() -> None:
 
     # Get all shortcuts in the home directory
     shortcuts = get_shortcuts_in_directory(home_dir)
+
+    tqdm.write(f"Found {len(shortcuts)} shortcuts to process")
 
     # Initialize the progress bar
     with tqdm(total=len(shortcuts), desc="Fixing Shortcuts") as progress_bar:
