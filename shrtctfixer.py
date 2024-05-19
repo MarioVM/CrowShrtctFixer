@@ -3,6 +3,8 @@ import pylnk3
 import string
 import logging
 from concurrent.futures import ThreadPoolExecutor, as_completed
+from tqdm import tqdm
+import time
 
 # Cache dictionary to store search results
 search_cache = {}
@@ -68,13 +70,14 @@ def get_shortcuts_in_directory(directory: str) -> list:
                 shortcuts.append(lnk_path)
     return shortcuts
 
-def fix_shortcut(lnk_path: str, drives: list) -> None:
+def fix_shortcut(lnk_path: str, drives: list, progress_bar) -> None:
     """
     Function to fix a single shortcut.
     
     Parameters:
     lnk_path (str): The full path to the shortcut.
     drives (list): A list of drive paths to search in for the target file.
+    progress_bar (tqdm): The progress bar object to update.
 
     Returns:
     None
@@ -89,6 +92,7 @@ def fix_shortcut(lnk_path: str, drives: list) -> None:
     except Exception as e:
         # Log the error and return
         logging.error(f"Error creating shortcut object for {lnk_path}: {str(e)}")
+        progress_bar.update(1)
         return
     # If the target file of the shortcut does not exist
     if not os.path.exists(lnk.relative_path):
@@ -103,6 +107,7 @@ def fix_shortcut(lnk_path: str, drives: list) -> None:
             lnk.working_dir = os.path.dirname(new_path)
             # Save the changes to the shortcut
             lnk.save(lnk_path)
+    progress_bar.update(1)
 
 def fix_shortcuts() -> None:
     """
@@ -137,13 +142,19 @@ def fix_shortcuts() -> None:
     # Get all shortcuts in the home directory
     shortcuts = get_shortcuts_in_directory(home_dir)
 
-    # Use ThreadPoolExecutor to fix shortcuts in parallel
-    with ThreadPoolExecutor() as executor:
-        futures = [executor.submit(fix_shortcut, shortcut, drives) for shortcut in shortcuts]
-        for future in as_completed(futures):
-            future.result()
+    # Initialize the progress bar
+    with tqdm(total=len(shortcuts), desc="Fixing Shortcuts") as progress_bar:
+        # Use ThreadPoolExecutor to fix shortcuts in parallel
+        with ThreadPoolExecutor() as executor:
+            futures = [executor.submit(fix_shortcut, shortcut, drives, progress_bar) for shortcut in shortcuts]
+            for future in as_completed(futures):
+                future.result()
 
 # If the script is run as a standalone program
 if __name__ == "__main__":
     # Start the process of fixing broken shortcuts
+    start_time = time.time()
     fix_shortcuts()
+    end_time = time.time()
+    elapsed_time = end_time - start_time
+    print(f"Completed in {elapsed_time:.2f} seconds")
