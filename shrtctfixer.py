@@ -4,9 +4,12 @@ import string
 import logging
 from concurrent.futures import ThreadPoolExecutor, as_completed
 
+# Cache dictionary to store search results
+search_cache = {}
+
 def find_file(name: str, drives: list) -> str:
     """
-    Function to find a file in the given drives using parallel search.
+    Function to find a file in the given drives using parallel search with caching.
     
     Parameters:
     name (str): The name of the file to find.
@@ -15,18 +18,36 @@ def find_file(name: str, drives: list) -> str:
     Returns:
     str: The full path to the file if found, None otherwise.
     """
+    # Check if the file name is already in the cache
+    if name in search_cache:
+        return search_cache[name]
+
     def search_drive(drive):
+        """
+        Function to search for the file in a specific drive.
+        
+        Parameters:
+        drive (str): The drive path to search in.
+
+        Returns:
+        str: The full path to the file if found in the drive, None otherwise.
+        """
         for root, dirs, files in os.walk(drive):
             if name in files:
                 return os.path.join(root, name)
         return None
 
+    # Use ThreadPoolExecutor to search multiple drives in parallel
     with ThreadPoolExecutor() as executor:
         future_to_drive = {executor.submit(search_drive, drive): drive for drive in drives}
         for future in as_completed(future_to_drive):
             result = future.result()
             if result:
+                # Cache the result before returning
+                search_cache[name] = result
                 return result
+    # Cache the None result if the file is not found
+    search_cache[name] = None
     return None
 
 def get_shortcuts_in_directory(directory: str) -> list:
@@ -63,16 +84,24 @@ def fix_shortcut(lnk_path: str, drives: list) -> None:
     Logs any changes made or errors encountered to a log file.
     """
     try:
+        # Create a shortcut object
         lnk = pylnk3.LNK(lnk_path)
     except Exception as e:
+        # Log the error and return
         logging.error(f"Error creating shortcut object for {lnk_path}: {str(e)}")
         return
+    # If the target file of the shortcut does not exist
     if not os.path.exists(lnk.relative_path):
+        # Find the target file in the drives
         new_path = find_file(os.path.basename(lnk.relative_path), drives)
+        # If the target file is found
         if new_path:
+            # Log the change
             logging.info(f"Changed {lnk_path} from {lnk.relative_path} to {new_path}")
+            # Update the target path and working directory of the shortcut
             lnk.relative_path = new_path
             lnk.working_dir = os.path.dirname(new_path)
+            # Save the changes to the shortcut
             lnk.save(lnk_path)
 
 def fix_shortcuts() -> None:
@@ -90,20 +119,31 @@ def fix_shortcuts() -> None:
     Modifies shortcut files in the user's home directory.
     Logs any changes made or errors encountered to a log file.
     """
+    # Get the path to the user's home directory
     home_dir = os.path.expanduser("~")
+    
+    # Generate a list of all existing drives
     all_drives = [f"{d}:\\" for d in string.ascii_uppercase if os.path.exists(f"{d}:\\")]
 
+    # Ask the user which drives to exclude
     exclude_drives = input("Enter the drives to exclude, separated by commas (e.g., 'C,D'): ").upper().split(',')
+    
+    # Generate a list of drives to include, excluding the specified drives
     drives = [drive for drive in all_drives if drive[0] not in exclude_drives]
 
+    # Configure logging
     logging.basicConfig(filename='changes.log', level=logging.INFO, format='%(asctime)s - %(message)s')
 
+    # Get all shortcuts in the home directory
     shortcuts = get_shortcuts_in_directory(home_dir)
 
+    # Use ThreadPoolExecutor to fix shortcuts in parallel
     with ThreadPoolExecutor() as executor:
         futures = [executor.submit(fix_shortcut, shortcut, drives) for shortcut in shortcuts]
         for future in as_completed(futures):
             future.result()
 
+# If the script is run as a standalone program
 if __name__ == "__main__":
+    # Start the process of fixing broken shortcuts
     fix_shortcuts()
